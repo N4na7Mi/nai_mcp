@@ -10,9 +10,23 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from fastmcp import FastMCP
+import inspect
+try:
+    from fastmcp import FastMCP
+except Exception:
+    from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("nai-mcp", stateless_http=True, json_response=True)
+
+app = getattr(mcp, "app", None)
+if app is not None and hasattr(app, "get"):
+    @app.get("/")
+    async def root() -> Dict[str, str]:
+        return {"status": "ok"}
+
+    @app.get("/healthz")
+    async def healthz() -> Dict[str, str]:
+        return {"status": "ok"}
 
 NOVELAI_TOKEN = os.getenv("NOVELAI_TOKEN", "")
 NOVELAI_ENDPOINT = os.getenv("NOVELAI_ENDPOINT", "https://image.novelai.net/ai/generate-image")
@@ -379,5 +393,16 @@ async def generate_novelai_image(
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
-    mcp.run(transport="http", host="0.0.0.0", port=port, path="/mcp")
+    run_sig = inspect.signature(mcp.run)
+    kwargs = {}
+    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+    if "transport" in run_sig.parameters:
+        kwargs["transport"] = transport
+    if "host" in run_sig.parameters:
+        kwargs["host"] = "0.0.0.0"
+    if "port" in run_sig.parameters:
+        kwargs["port"] = port
+    if "path" in run_sig.parameters:
+        kwargs["path"] = "/mcp"
+    mcp.run(**kwargs)
 
