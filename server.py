@@ -380,5 +380,12 @@ async def generate_novelai_image(
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
-    uvicorn.run(mcp.app, host="0.0.0.0", port=port)
+    app = None
+    for attr in ("app", "_app", "fastapi_app", "asgi_app"):
+        app = getattr(mcp, attr, None)
+        if app is not None:
+            break
+    if app is None:
+        raise RuntimeError("FastMCP ASGI app not found on this MCP version")
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
