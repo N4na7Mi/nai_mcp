@@ -395,6 +395,16 @@ async def generate_novelai_image(
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
     app = getattr(mcp, "app", None) or getattr(mcp, "_app", None)
+    if app is None:
+        for name in ("get_app", "asgi_app", "asgi", "_get_app", "build_app"):
+            candidate = getattr(mcp, name, None)
+            if callable(candidate):
+                try:
+                    app = candidate()
+                    if app is not None:
+                        break
+                except Exception:
+                    app = None
     if app is not None:
         uvicorn.run(app, host="0.0.0.0", port=port)
     else:
