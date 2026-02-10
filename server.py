@@ -396,17 +396,34 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
     os.environ.setdefault("FASTMCP_HOST", "0.0.0.0")
     os.environ.setdefault("FASTMCP_PORT", str(port))
-    app = getattr(mcp, "app", None) or getattr(mcp, "_app", None)
-    if app is None:
-        for name in ("get_app", "asgi_app", "asgi", "_get_app", "build_app"):
-            candidate = getattr(mcp, name, None)
+    os.environ.setdefault("MCP_HOST", "0.0.0.0")
+    os.environ.setdefault("MCP_PORT", str(port))
+    os.environ.setdefault("HOST", "0.0.0.0")
+    os.environ.setdefault("PORT", str(port))
+
+    def _resolve_app(obj):
+        if obj is None:
+            return None
+        for name in ("app", "_app", "asgi_app", "fastapi_app", "http_app", "web_app"):
+            app_candidate = getattr(obj, name, None)
+            if app_candidate is not None:
+                return app_candidate
+        for name in ("get_app", "build_app", "_get_app", "asgi", "asgi_factory"):
+            candidate = getattr(obj, name, None)
             if callable(candidate):
                 try:
-                    app = candidate()
-                    if app is not None:
-                        break
+                    app_candidate = candidate()
+                    if app_candidate is not None:
+                        return app_candidate
                 except Exception:
-                    app = None
+                    pass
+        return None
+
+    app = _resolve_app(mcp)
+    if app is None:
+        app = _resolve_app(getattr(mcp, "_server", None))
+    if app is None:
+        app = _resolve_app(getattr(mcp, "server", None))
     if app is not None:
         uvicorn.run(app, host="0.0.0.0", port=port)
     else:
