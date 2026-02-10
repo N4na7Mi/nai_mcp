@@ -394,6 +394,8 @@ async def generate_novelai_image(
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
+    os.environ.setdefault("FASTMCP_HOST", "0.0.0.0")
+    os.environ.setdefault("FASTMCP_PORT", str(port))
     app = getattr(mcp, "app", None) or getattr(mcp, "_app", None)
     if app is None:
         for name in ("get_app", "asgi_app", "asgi", "_get_app", "build_app"):
@@ -411,13 +413,25 @@ if __name__ == "__main__":
         run_sig = inspect.signature(mcp.run)
         kwargs = {}
         transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+        param_names = list(run_sig.parameters.keys())
+        print(f"[startup] FastMCP.run params: {param_names}")
         if "transport" in run_sig.parameters:
             kwargs["transport"] = transport
         if "host" in run_sig.parameters:
             kwargs["host"] = "0.0.0.0"
+        elif "bind" in run_sig.parameters:
+            kwargs["bind"] = "0.0.0.0"
         if "port" in run_sig.parameters:
             kwargs["port"] = port
+        elif "http_port" in run_sig.parameters:
+            kwargs["http_port"] = port
+        elif "listen_port" in run_sig.parameters:
+            kwargs["listen_port"] = port
         if "path" in run_sig.parameters:
             kwargs["path"] = "/mcp"
+        if "stateless_http" in run_sig.parameters:
+            kwargs["stateless_http"] = True
+        if "json_response" in run_sig.parameters:
+            kwargs["json_response"] = True
         mcp.run(**kwargs)
 
