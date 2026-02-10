@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+print("HEALTH WRAPPER ENABLED", flush=True)
 import uvicorn
 try:
     from fastmcp import FastMCP
@@ -412,14 +413,16 @@ if __name__ == "__main__":
     if is_factory:
         app = app()
 
-    if hasattr(app, "get"):
-        @app.get("/")
-        async def root() -> Dict[str, str]:
-            return {"status": "ok"}
+    async def _health_wrapper(scope, receive, send):
+        if scope.get("type") == "http":
+            path = scope.get("path", "")
+            if path in ("/", "/healthz"):
+                body = b'{"status":"ok"}'
+                headers = [(b"content-type", b"application/json")]
+                await send({"type": "http.response.start", "status": 200, "headers": headers})
+                await send({"type": "http.response.body", "body": body})
+                return
+        await app(scope, receive, send)
 
-        @app.get("/healthz")
-        async def healthz() -> Dict[str, str]:
-            return {"status": "ok"}
-
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(_health_wrapper, host="0.0.0.0", port=port)
 
