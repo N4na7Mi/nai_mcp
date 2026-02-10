@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+import uvicorn
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("nai-mcp", stateless_http=True, json_response=True)
@@ -379,5 +380,5 @@ async def generate_novelai_image(
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
-    mcp.run(transport="streamable-http", port=port)
+    uvicorn.run(mcp.app, host="0.0.0.0", port=port)
 
