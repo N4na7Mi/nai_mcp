@@ -378,5 +378,6 @@ async def generate_novelai_image(
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8000"))`n    mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
+    port = int(os.getenv("PORT", "8000"))
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
 
