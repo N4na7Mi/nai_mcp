@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 import inspect
+import uvicorn
 try:
     from fastmcp import FastMCP
 except Exception:
@@ -393,16 +394,20 @@ async def generate_novelai_image(
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
-    run_sig = inspect.signature(mcp.run)
-    kwargs = {}
-    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
-    if "transport" in run_sig.parameters:
-        kwargs["transport"] = transport
-    if "host" in run_sig.parameters:
-        kwargs["host"] = "0.0.0.0"
-    if "port" in run_sig.parameters:
-        kwargs["port"] = port
-    if "path" in run_sig.parameters:
-        kwargs["path"] = "/mcp"
-    mcp.run(**kwargs)
+    app = getattr(mcp, "app", None) or getattr(mcp, "_app", None)
+    if app is not None:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        run_sig = inspect.signature(mcp.run)
+        kwargs = {}
+        transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+        if "transport" in run_sig.parameters:
+            kwargs["transport"] = transport
+        if "host" in run_sig.parameters:
+            kwargs["host"] = "0.0.0.0"
+        if "port" in run_sig.parameters:
+            kwargs["port"] = port
+        if "path" in run_sig.parameters:
+            kwargs["path"] = "/mcp"
+        mcp.run(**kwargs)
 
