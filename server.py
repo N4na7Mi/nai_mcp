@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 print("HEALTH WRAPPER ENABLED", flush=True)
 import uvicorn
+from fastapi import FastAPI
 try:
     from fastmcp import FastMCP
 except Exception:
@@ -406,23 +407,24 @@ if __name__ == "__main__":
                 return value, True
         return None, False
 
-    app, is_factory = resolve_app()
-    if app is None:
+    mcp_app, is_factory = resolve_app()
+    if mcp_app is None:
         raise RuntimeError("Unable to resolve FastMCP ASGI app for uvicorn")
 
     if is_factory:
-        app = app()
+        mcp_app = mcp_app()
 
-    async def _health_wrapper(scope, receive, send):
-        if scope.get("type") == "http":
-            path = scope.get("path", "")
-            if path in ("/", "/healthz"):
-                body = b'{"status":"ok"}'
-                headers = [(b"content-type", b"application/json")]
-                await send({"type": "http.response.start", "status": 200, "headers": headers})
-                await send({"type": "http.response.body", "body": body})
-                return
-        await app(scope, receive, send)
+    api = FastAPI()
 
-    uvicorn.run(_health_wrapper, host="0.0.0.0", port=port)
+    @api.get("/")
+    async def root() -> Dict[str, str]:
+        return {"status": "ok"}
+
+    @api.get("/healthz")
+    async def healthz() -> Dict[str, str]:
+        return {"status": "ok"}
+
+    api.mount("/mcp", mcp_app)
+
+    uvicorn.run(api, host="0.0.0.0", port=port)
 
