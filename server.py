@@ -410,7 +410,16 @@ if __name__ == "__main__":
         raise RuntimeError("Unable to resolve FastMCP ASGI app for uvicorn")
 
     if is_factory:
-        uvicorn.run(app, host="0.0.0.0", port=port, factory=True)
-    else:
-        uvicorn.run(app, host="0.0.0.0", port=port)
+        app = app()
+
+    if hasattr(app, "get"):
+        @app.get("/")
+        async def root() -> Dict[str, str]:
+            return {"status": "ok"}
+
+        @app.get("/healthz")
+        async def healthz() -> Dict[str, str]:
+            return {"status": "ok"}
+
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
