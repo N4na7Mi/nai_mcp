@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+import uvicorn
 try:
     from fastmcp import FastMCP
 except Exception:
@@ -391,5 +392,25 @@ async def generate_novelai_image(
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    port = int(os.getenv("PORT", "8000"))
+
+    def resolve_app():
+        for name in ("app", "_app", "asgi_app", "fastapi_app", "http_app", "web_app"):
+            value = getattr(mcp, name, None)
+            if value is not None:
+                return value, False
+        for name in ("get_app", "build_app", "_get_app", "asgi", "asgi_factory", "app_factory"):
+            value = getattr(mcp, name, None)
+            if callable(value):
+                return value, True
+        return None, False
+
+    app, is_factory = resolve_app()
+    if app is None:
+        raise RuntimeError("Unable to resolve FastMCP ASGI app for uvicorn")
+
+    if is_factory:
+        uvicorn.run(app, host="0.0.0.0", port=port, factory=True)
+    else:
+        uvicorn.run(app, host="0.0.0.0", port=port)
 
