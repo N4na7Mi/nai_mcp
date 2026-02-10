@@ -410,11 +410,24 @@ if __name__ == "__main__":
     if app is not None:
         uvicorn.run(app, host="0.0.0.0", port=port)
     else:
-        run_sig = inspect.signature(mcp.run)
+    run_sig = inspect.signature(mcp.run)
+    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+    param_names = list(run_sig.parameters.keys())
+    print(f"[startup] FastMCP.run params: {param_names}")
+
+    if "transport_kwargs" in run_sig.parameters:
+        mcp.run(
+            transport=transport,
+            transport_kwargs={
+                "host": "0.0.0.0",
+                "port": port,
+                "path": "/mcp",
+                "stateless_http": True,
+                "json_response": True,
+            },
+        )
+    else:
         kwargs = {}
-        transport = os.getenv("MCP_TRANSPORT", "streamable-http")
-        param_names = list(run_sig.parameters.keys())
-        print(f"[startup] FastMCP.run params: {param_names}")
         if "transport" in run_sig.parameters:
             kwargs["transport"] = transport
         if "host" in run_sig.parameters:
