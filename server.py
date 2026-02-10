@@ -410,41 +410,41 @@ if __name__ == "__main__":
     if app is not None:
         uvicorn.run(app, host="0.0.0.0", port=port)
     else:
-    run_sig = inspect.signature(mcp.run)
-    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
-    param_names = list(run_sig.parameters.keys())
-    print(f"[startup] FastMCP.run params: {param_names}")
+        run_sig = inspect.signature(mcp.run)
+        transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+        param_names = list(run_sig.parameters.keys())
+        print(f"[startup] FastMCP.run params: {param_names}")
 
-    if "transport_kwargs" in run_sig.parameters:
-        mcp.run(
-            transport=transport,
-            transport_kwargs={
-                "host": "0.0.0.0",
-                "port": port,
-                "path": "/mcp",
-                "stateless_http": True,
-                "json_response": True,
-            },
-        )
-    else:
-        kwargs = {}
-        if "transport" in run_sig.parameters:
-            kwargs["transport"] = transport
-        if "host" in run_sig.parameters:
-            kwargs["host"] = "0.0.0.0"
-        elif "bind" in run_sig.parameters:
-            kwargs["bind"] = "0.0.0.0"
-        if "port" in run_sig.parameters:
-            kwargs["port"] = port
-        elif "http_port" in run_sig.parameters:
-            kwargs["http_port"] = port
-        elif "listen_port" in run_sig.parameters:
-            kwargs["listen_port"] = port
-        if "path" in run_sig.parameters:
-            kwargs["path"] = "/mcp"
-        if "stateless_http" in run_sig.parameters:
-            kwargs["stateless_http"] = True
-        if "json_response" in run_sig.parameters:
-            kwargs["json_response"] = True
-        mcp.run(**kwargs)
+        if "transport_kwargs" in run_sig.parameters:
+            mcp.run(
+                transport=transport,
+                transport_kwargs={
+                    "host": "0.0.0.0",
+                    "port": port,
+                    "path": "/mcp",
+                    "stateless_http": True,
+                    "json_response": True,
+                },
+            )
+        else:
+            kwargs = {}
+            if "transport" in run_sig.parameters:
+                kwargs["transport"] = transport
+            if "host" in run_sig.parameters:
+                kwargs["host"] = "0.0.0.0"
+            elif "bind" in run_sig.parameters:
+                kwargs["bind"] = "0.0.0.0"
+            if "port" in run_sig.parameters:
+                kwargs["port"] = port
+            elif "http_port" in run_sig.parameters:
+                kwargs["http_port"] = port
+            elif "listen_port" in run_sig.parameters:
+                kwargs["listen_port"] = port
+            if "path" in run_sig.parameters:
+                kwargs["path"] = "/mcp"
+            if "stateless_http" in run_sig.parameters:
+                kwargs["stateless_http"] = True
+            if "json_response" in run_sig.parameters:
+                kwargs["json_response"] = True
+            mcp.run(**kwargs)
 
